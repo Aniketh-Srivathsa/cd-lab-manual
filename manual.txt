@@ -1,5 +1,6 @@
 
 
+
 -------------------------------------------COMPLEX-------------------------------------------
 
 
@@ -297,66 +298,92 @@ F → ( E ) | id
 
 
 #include <stdio.h>
-#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
-int count, n;
-char prod[10][10], first[10];
+char input[100];
+int pos = 0;
 
-int isPresent(char c) {
-    for(int i = 0; i < n; i++)
-        if(first[i] == c) return 1;
+char lookahead() {
+    return input[pos];
+}
+
+void error() {
+    printf("Error at position %d\n", pos);
+    exit(1);
+}
+
+// Function declarations
+int E(), Edash(), T(), Tdash(), F();
+
+// E → T E'
+int E() {
+    if (T())
+        return Edash();
     return 0;
 }
 
-void add(char c) {
-    if(!isPresent(c))
-        first[n++] = c;
+// E' → + T E' | ε
+int Edash() {
+    if (lookahead() == '+') {
+        pos++;
+        if (T())
+            return Edash();
+        else
+            error();
+    }
+    return 1; // epsilon
 }
 
-void FIRST(char c) {
-    if(!isupper(c)) {
-        add(c);
-        return;
+// T → F T'
+int T() {
+    if (F())
+        return Tdash();
+    return 0;
+}
+
+// T' → * F T' | ε
+int Tdash() {
+    if (lookahead() == '*') {
+        pos++;
+        if (F())
+            return Tdash();
+        else
+            error();
     }
+    return 1; // epsilon
+}
 
-    for(int i = 0; i < count; i++) {
-        if(prod[i][0] == c) {
-            char next = prod[i][2];
-
-            if(next == '$') {
-                add('$');
-            }
-            else if(!isupper(next)) {
-                add(next);
-            }
-            else {
-                FIRST(next);
+// F → (E) | i
+int F() {
+    if (lookahead() == 'i') {
+        pos++;
+        return 1;
+    }
+    else if (lookahead() == '(') {
+        pos++;
+        if (E()) {
+            if (lookahead() == ')') {
+                pos++;
+                return 1;
+            } else {
+                error();
             }
         }
     }
+    return 0;
 }
 
 int main() {
-    char ch;
+    printf("Enter input string: ");
+    scanf("%s", input);
 
-    printf("Enter number of productions: ");
-    scanf("%d", &count);
+    pos = 0;
 
-    printf("Enter productions (E=E+T format, use i for id):\n");
-    for(int i = 0; i < count; i++)
-        scanf("%s", prod[i]);
-
-    printf("Enter non-terminal: ");
-    scanf(" %c", &ch);
-
-    n = 0;
-    FIRST(ch);
-
-    printf("FIRST(%c) = { ", ch);
-    for(int i = 0; i < n; i++)
-        printf("%c ", first[i]);
-    printf("}\n");
+    if (E() && input[pos] == '\0')
+        printf("String Accepted\n");
+    else
+        error();
 
     return 0;
 }
@@ -867,3 +894,4 @@ HOW TO EXECUTE
 lex count.l
 gcc lex.yy.c -o count
 ./count
+
